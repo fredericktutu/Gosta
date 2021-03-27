@@ -1,5 +1,5 @@
 # Gosta
-Detecting Goroutine bugs with static analysis methodologies
+detecting Goroutine bugs with Static analysis methodologies
 
 ## Monsters to defeat:
 + goroutine leak
