@@ -1,0 +1,28 @@
+package hello
+import "fmt"
+func A(ch chan int, ch22 chan int) {
+	ch <- 1
+	ch22 <- 2
+}
+
+func B(ch chan int, ch22 chan int) {
+	ch <- 1
+	ch22 <- 2
+}
+
+func use(a int) {
+	fmt.Println(a)
+}
+
+func main() {
+	ch := make(chan int, 1)
+	ch2 := make(chan int, 2)
+	go A(ch, ch2)
+	go B(ch, ch2)
+	var x int
+	if 1 == 2 {
+		x = <- ch
+	}
+	ch2 <- 1
+	use(x)
+}
