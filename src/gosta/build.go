@@ -180,8 +180,8 @@ func walkBB(bb *ssa.BasicBlock, bhelper *BuildHelper) *SmallFSM {
 
 			//追加一个Goroutine,并填充一下
 			var g *Goroutine = AddGoroutine(sfsm)
-			g.Num = bhelper.GoroutineCounter
 			bhelper.GoroutineCounter += 1
+			g.Num = bhelper.GoroutineCounter
 
 			if funcIndex, ok := bhelper.FuncEnv[instrGo.Call.Value.Name()]; ok {  // 找的到
 				g.Machine = GID(funcIndex)

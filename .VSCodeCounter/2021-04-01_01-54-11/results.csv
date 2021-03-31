@@ -1,0 +1,7 @@
+"filename", "language", "Go", "comment", "blank", "total"
+"c:\Workspace\Git\Gosta\src\gosta\build.go", "Go", 181, 45, 72, 298
+"c:\Workspace\Git\Gosta\src\gosta\execute.go", "Go", 218, 55, 88, 361
+"c:\Workspace\Git\Gosta\src\gosta\stack.go", "Go", 70, 12, 18, 100
+"c:\Workspace\Git\Gosta\src\gosta\state.go", "Go", 89, 30, 30, 149
+"c:\Workspace\Git\Gosta\src\main.go", "Go", 13, 1, 6, 20
+"Total", "-", 571, 143, 214, 928

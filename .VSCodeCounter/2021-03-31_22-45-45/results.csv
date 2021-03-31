@@ -1,0 +1,15 @@
+"filename", "language", "Go", "Markdown", "ANTLR", "comment", "blank", "total"
+"c:\Workspace\Git\Gosta\README.md", "Markdown", 0, 5, 0, 0, 2, 7
+"c:\Workspace\Git\Gosta\examples\example1.go", "Go", 26, 0, 0, 0, 8, 34
+"c:\Workspace\Git\Gosta\examples\example2.go", "Go", 31, 0, 0, 0, 9, 40
+"c:\Workspace\Git\Gosta\examples\example3.go", "Go", 38, 0, 0, 0, 8, 46
+"c:\Workspace\Git\Gosta\src\gosta\build.go", "Go", 181, 0, 0, 45, 72, 298
+"c:\Workspace\Git\Gosta\src\gosta\execute.go", "Go", 139, 0, 0, 47, 66, 252
+"c:\Workspace\Git\Gosta\src\gosta\stack.go", "Go", 70, 0, 0, 12, 18, 100
+"c:\Workspace\Git\Gosta\src\gosta\state.go", "Go", 89, 0, 0, 30, 30, 149
+"c:\Workspace\Git\Gosta\src\main.go", "Go", 10, 0, 0, 1, 3, 14
+"c:\Workspace\Git\Gosta\try\inheritance\inheritance.go", "Go", 19, 0, 0, 0, 4, 23
+"c:\Workspace\Git\Gosta\try\smallgo\SgoLexer.g4", "ANTLR", 0, 0, 44, 0, 15, 59
+"c:\Workspace\Git\Gosta\try\tree\intertest.go", "Go", 43, 0, 0, 0, 8, 51
+"c:\Workspace\Git\Gosta\try\tree\tree.go", "Go", 65, 0, 0, 4, 12, 81
+"Total", "-", 711, 5, 44, 139, 255, 1154
