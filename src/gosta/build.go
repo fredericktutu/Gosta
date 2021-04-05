@@ -51,6 +51,19 @@ func lookupChan(reg string, bhelper *BuildHelper) ChanID {
 	return ChanID(idInt)
 }
 
+func showStates(bh *BuildHelper, sfsm *SmallFSM) {
+	iterState := sfsm.First
+	for {
+		fmt.Println("<state>", iterState.ID.ID)
+
+		if iterState == sfsm.Last {
+			return
+		}
+		nextStateID := iterState.Out[0].To
+		iterState = bh.GFSMs[nextStateID.GID].States[nextStateID.ID]
+	}
+}
+
 func walkFunc(f *ssa.Function, bhelper *BuildHelper) {
 	var sfsmLst []*SmallFSM
 	var bbMap = make(map[*ssa.BasicBlock]int)
@@ -88,26 +101,35 @@ func walkFunc(f *ssa.Function, bhelper *BuildHelper) {
 		bbMap[bb] = i
 	}
 
-	bhelper.StateCounter = 0
+	bhelper.StateCounter = -1  // 每次加1
 	for i, bb := range f.Blocks {
 		fmt.Println("[bb]:", i)
 		sfsm := walkBB(bb, bhelper)
 		sfsmLst = append(sfsmLst, sfsm)
 
-		fmt.Println("[bb]:", i, "'s sfsm:", sfsm)
-		fmt.Println("---"); fmt.Println()
+		fmt.Println("[bb]", i, "'s states:")
+		showStates(bhelper, sfsm)
+		
 
 		// 处理bb之间的边，EPSILON边
+		fmt.Println("[bb]", i, "'s edges:" )
 		for _, succ := range bb.Succs {
+			fmt.Println("    ", "to", bbMap[succ])
 			sfsm.Outs = append(sfsm.Outs, bbMap[succ])
 		}
+
+		fmt.Println("---"); fmt.Println()
 	}
 
+	fmt.Println("<->");
 	// 根据BB之间的连接，将SmallFSM里面各个State连起来
-	for _, sfsm := range sfsmLst {
+	for i, sfsm := range sfsmLst {
+		fmt.Println("[bb]", i, "begin link state")
 		sourceState := sfsm.Last
 		for _, num := range sfsm.Outs {
 			targetState := sfsmLst[num].First  // 要连接的目标state
+
+			fmt.Println("    <linkstate>", sourceState.ID.ID, "->", targetState.ID.ID)
 			LinkState(sourceState, targetState, 0, OP_EPSILON)  // 连接两个State
 
 		}
@@ -118,9 +140,8 @@ func walkFunc(f *ssa.Function, bhelper *BuildHelper) {
 }
 
 func walkBB(bb *ssa.BasicBlock, bhelper *BuildHelper) *SmallFSM {
-
-	var sfsm *SmallFSM = MakeSmallFSM(bhelper.GFSMs[bhelper.CurMachine], bhelper.CurMachine, bhelper.StateCounter)
 	bhelper.StateCounter += 1
+	var sfsm *SmallFSM = MakeSmallFSM(bhelper.GFSMs[bhelper.CurMachine], bhelper.CurMachine, bhelper.StateCounter)
 
 	for i, instr := range bb.Instrs {
 		switch instr.(type) {
@@ -132,7 +153,8 @@ func walkBB(bb *ssa.BasicBlock, bhelper *BuildHelper) *SmallFSM {
 			instrSend, _ := instr.(*ssa.Send)
 			chanID := lookupChan(fmt.Sprintf("%s.%s", bhelper.CurFuncname, instrSend.Chan.Name()), bhelper)
 			fmt.Println("    <instr>", i, "SEND | To Reg:", instrSend.Chan.Name(), "| Actually is Chan", chanID)
-
+			
+			bhelper.StateCounter += 1
 			AddState(sfsm, bhelper.GFSMs[bhelper.CurMachine], OP_SEND, chanID, bhelper.CurMachine, bhelper.StateCounter)  //增加状态
 
 		case *ssa.UnOp:
@@ -146,6 +168,7 @@ func walkBB(bb *ssa.BasicBlock, bhelper *BuildHelper) *SmallFSM {
 				chanID := lookupChan(fmt.Sprintf("%s.%s", bhelper.CurFuncname, instrUnOp.X.Name()), bhelper)
 				fmt.Println("    <instr>", i, "RECV | From Reg:", instrUnOp.X.Name(), "| Actually is Chan", chanID)  // Name()返回存channel的寄存器，接下来需要确认是哪个channel
 
+				bhelper.StateCounter += 1
 				AddState(sfsm, bhelper.GFSMs[bhelper.CurMachine], OP_RECV, chanID, bhelper.CurMachine, bhelper.StateCounter)  // 增加状态
 
 			}

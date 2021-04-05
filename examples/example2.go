@@ -4,36 +4,24 @@ import (
 	"fmt"
 )
 
-func wait(n int) {
-	for i := 1; i <= n*1000000; i++ {
-		continue
-	}
+func main() {
+	ch1 := make(chan int, 0)
+	ch2 := make(chan int, 0)
+	go A(ch1)
+	go B(ch1, ch2)
+	<- ch2
+	fmt.Println("baz")
+
+
 }
 
 func A(ch1 chan int) {
-	for i := 1; i < 5; i++ {
-		fmt.Println("A", i)
-		wait(1)
-	}
+	fmt.Println("foo")
 	ch1 <- 1
-
 }
 
-func B(ch1, ch2 chan int) {
-	fmt.Println("B gets", <-ch1)
-	for i := 1; i < 5; i++ {
-		fmt.Println("B", i)
-		wait(1)
-	}
-	ch2 <- 2
-}
-
-func main() {
-	ch1 := make(chan int)
-	ch2 := make(chan int)
-	go A(ch1)      //将函数A制作为协程并启动
-	go B(ch1, ch2) //将函数B制作为协程并启动
-
-	fmt.Println("Main gets", <-ch2)
-
+func B(ch1 chan int, ch2 chan int) {
+	<- ch1
+	fmt.Println("bar")
+	ch2 <- 1
 }
