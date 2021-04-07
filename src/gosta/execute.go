@@ -20,6 +20,8 @@ type Runtime struct {
 	Logs ActionStack     //日志栈
 
 	LogCounter int    //当前日志编号
+
+	Result int // 0 succ  1 fail 3 may
 }
 
 
@@ -40,7 +42,12 @@ const (
 	ACTION_SEND
 	ACTION_RECV
 	ACTION_EPSILON
+	ACTION_MATCH
 	ACTION_ILLEGAL
+
+	
+	ACTION_SINGLE_SEND
+	ACTION_SINGLE_RECV
 )
 
 type Action struct {
@@ -49,6 +56,9 @@ type Action struct {
 	
 	Onwhich int    // 在哪个Goroutine上操作
 	ToState SID      // 到哪个State
+
+	Onwhich2 int  //ACTION_MATCH情况下，RECV的
+	ToState2 SID  //ACTION_MATCH情况下,RECV的
 
 	Type ActionType  // 哪种动作
 	ChanID int        // SEND/RECV时，用于改变Chan
@@ -59,6 +69,7 @@ func genAction(e *Edge, step int, onwhich int, sp *StaticProgram, rt *Runtime) A
 	var a Action
 	a.StepID = step      // 当前的stepID
 	a.Onwhich = onwhich  // 在哪个协程上进行操作
+	a.Onwhich2 = onwhich  // fix bug:用于保证容量为0的channel
 
 	realChanID := e.ChanID
 	if e.ChanID < 0 {
@@ -68,6 +79,16 @@ func genAction(e *Edge, step int, onwhich int, sp *StaticProgram, rt *Runtime) A
 	// 需要判断是否可以进行操作
 	switch e.Op {
 	case OP_SEND:
+		if rt.Channels[realChanID].Cap == 0 {
+			a.Type = ACTION_SINGLE_SEND
+			a.ChanID = int(realChanID)
+
+			a.ToState = e.To
+			toState := getState(sp, e.To)
+			a.Goroutines = toState.Gos  
+			return a
+		}
+
 		if rt.Channels[realChanID].Now >= rt.Channels[realChanID].Cap {
 			a.Type = ACTION_ILLEGAL
 			return a
@@ -78,6 +99,16 @@ func genAction(e *Edge, step int, onwhich int, sp *StaticProgram, rt *Runtime) A
 
 
 	case OP_RECV:
+		if rt.Channels[realChanID].Cap == 0 {
+			a.Type = ACTION_SINGLE_RECV
+			a.ChanID = int(realChanID)
+
+			a.ToState2 = e.To
+			toState2 := getState(sp, e.To)
+			a.Goroutines = toState2.Gos  
+			return a
+		}
+
 		if rt.Channels[realChanID].Now <= 0 {
 			a.Type = ACTION_ILLEGAL
 			return a
@@ -128,6 +159,14 @@ func doAction(rt *Runtime, a Action) {
 
 		// 1. 转移RGoroutine的状态
 		rt.Goroutines[a.Onwhich].Current.Push(a.ToState)
+
+	case ACTION_MATCH:
+		// 1. 对于操作SEND和RECV的这对协程，改变状态
+		rt.Goroutines[a.Onwhich].Current.Push(a.ToState)
+		rt.Goroutines[a.Onwhich2].Current.Push(a.ToState2)
+
+		// 2. 无需改变空管道的Now
+
 	case ACTION_MAIN:
 		break
 	}
@@ -178,6 +217,13 @@ func undoAction(rt *Runtime) {
 
 		// 1. 转移RGoroutine的状态
 		rt.Goroutines[la.Onwhich].Current.Pop()
+	
+	case ACTION_MATCH:
+		// 1. 对于操作SEND和RECV的这对协程，恢复状态
+		rt.Goroutines[la.Onwhich].Current.Pop()
+		rt.Goroutines[la.Onwhich2].Current.Pop()
+
+		// 2. 无需改变空管道的Now
 
 	}
 
@@ -222,6 +268,8 @@ func MakeRuntime(sp *StaticProgram, totalScore int) *Runtime{
 	*/
 
 	rt := new(Runtime)
+
+	rt.Result = 0
 
 	// 1. 初始化Channels
 	for _, c := range(sp.Channels) {
@@ -306,6 +354,8 @@ func Execute(rt *Runtime, sp *StaticProgram, limit int) {
 
 
 	var availables []Action
+	singleSends := make(map[int]([]Action))
+	singleRecvs := make(map[int]([]Action))
 
 	for gindex, _ := range rt.Live {
 		rgoroutine := rt.Goroutines[gindex]
@@ -317,23 +367,82 @@ func Execute(rt *Runtime, sp *StaticProgram, limit int) {
 		curState := getState(sp, rgoroutine.Current.Top())
 		
 		fmt.Println("[Analyze Edges]", "RGoroutine", gindex, "|At State", curState)
+
+
+
 		for i, e := range curState.Out{
 			fmt.Println("    <Edge>", i, "| To", e.To, "| Op", e.Op, "|On Chan", e.ChanID)
 
 			oneAct := genAction(e, rt.LogCounter, gindex, sp, rt)
 			if oneAct.Type == ACTION_ILLEGAL {
 				continue
+			} else if oneAct.Type == ACTION_SINGLE_SEND {
+				sends, ok := singleSends[oneAct.ChanID]
+				if ok {
+					singleSends[oneAct.ChanID] = append(sends, oneAct)
+				}else {
+					singleSends[oneAct.ChanID] = make([]Action, 1)
+					singleSends[oneAct.ChanID][0] = oneAct
+				}
+
+				continue
+			} else if oneAct.Type == ACTION_SINGLE_RECV {
+				recvs, ok := singleRecvs[oneAct.ChanID]
+				if ok {
+					singleRecvs[oneAct.ChanID] = append(recvs, oneAct)
+				}else {
+					singleRecvs[oneAct.ChanID] = make([]Action, 1)
+					singleRecvs[oneAct.ChanID][0] = oneAct
+				}
+				continue
 			}
 
 			availables = append(availables, oneAct)
 		}
 	}
+	fmt.Println("[singleSends]", singleSends, "[singleRecvs]", singleRecvs)
+
+	for keyChanID, sends := range singleSends {  // 容量为0的channels
+		recvs, ok := singleRecvs[keyChanID]
+		if ok {
+			for _, sendAction := range sends {
+				for _, recvAction := range recvs {
+					var matchAction Action
+					matchAction.Onwhich = sendAction.Onwhich
+					matchAction.ToState = sendAction.ToState
+					matchAction.Onwhich2 = recvAction.Onwhich2
+					matchAction.ToState2 = recvAction.ToState2
+					matchAction.Type = ACTION_MATCH
+					matchAction.ChanID = keyChanID
+					for _, goro := range sendAction.Goroutines {
+						matchAction.Goroutines = append(matchAction.Goroutines, goro)
+					}
+					for _, goro := range recvAction.Goroutines {
+						matchAction.Goroutines = append(matchAction.Goroutines, goro)
+					}
+					availables = append(availables, matchAction)
+				}
+			}
+		} else {
+			continue
+		}
+	}
+
+
+	// 打印各个Action
+	fmt.Println("[available actions]:")
+	for i, action := range availables {
+		fmt.Println("<action>", i, action)
+	}
 
 	// available空，协程死锁
 	if len(availables) == 0 {
 		fmt.Println("[ERROR] goroutine deadlock!")
+		rt.Result += 1
 		return
 	}
+
+
 
 	//打分
 	rank1(&availables, limit)
