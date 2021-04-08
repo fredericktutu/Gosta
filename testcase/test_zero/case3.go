@@ -3,12 +3,14 @@ package main
 /*
 case3:
 
-expect: 0 Bugs
+两次S和R都能匹配上
+
+[expect] 0 Bugs
 */
 
 
 func send(ch chan int) {
-	ch <- 1  //在这里block住没有关系
+	ch <- 1 
 }
 
 func receive(ch chan int) {

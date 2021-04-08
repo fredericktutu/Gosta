@@ -3,12 +3,14 @@ package main
 /*
 case4:
 
-expect: 1 Bugs
+因为main中的send发生死锁，在发生死锁前有两种路径
+
+[expect] 2 Bugs
 */
 
 
 func send(ch chan int) {
-	ch <- 1  //在这里block住没有关系
+	ch <- 1 
 }
 
 func receive(ch chan int) {

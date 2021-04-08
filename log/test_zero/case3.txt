@@ -1,0 +1,108 @@
+# Name: main.main
+# Package: main
+# Location: testcase/test_zero/case3.go:20:6
+func main():
+0:                                                                entry P:0 S:0
+	t0 = make chan int 0:int                                       chan int
+	go receive(t0)
+	go receive(t0)
+	send t0 <- 1:int
+	send t0 <- 1:int
+	return
+
+<->
+[bb]: 0
+    <instr> 0 MAKECHAN | make chan int 0:int
+        (size) 0:int
+        (reg) t0
+    <instr> 1 GO | Func name: receive | Args:
+        (param) 0 | Name: t0 | Type: chan int | Actually is Chan 0
+    <instr> 2 GO | Func name: receive | Args:
+        (param) 0 | Name: t0 | Type: chan int | Actually is Chan 0
+    <instr> 3 SEND | To Reg: t0 | Actually is Chan 0
+    <instr> 4 SEND | To Reg: t0 | Actually is Chan 0
+    <instr> 5 other
+[bb] 0 's states:
+<state> 0
+<state> 1
+<state> 2
+[bb] 0 's edges:
+---
+
+<->
+[bb] 0 begin link state
+-------------------------
+# Name: main.receive
+# Package: main
+# Location: testcase/test_zero/case3.go:16:6
+func receive(ch chan int):
+0:                                                                entry P:0 S:0
+	t0 = <-ch                                                           int
+	return
+
+<->
+[Parameters]
+    <Param> -1 |Reg: ch
+---
+[bb]: 0
+    <instr> 0 RECV | From Reg: ch | Actually is Chan -1
+    <instr> 1 other
+[bb] 0 's states:
+<state> 0
+<state> 1
+[bb] 0 's edges:
+---
+
+<->
+[bb] 0 begin link state
+-------------------------
+Static Program after build:
+ &{[0xc0000992c0 0xc000099320] [{0 0 }] 2 5}
+
+*****Begin Execution*****
+[Do Action] ActionType 0 | On Goroutine 0 | ToState {0 0} |ChanID 0 |Chan now 0
+    <Go func> 1
+    <Binding> [0]
+    <Go func> 2
+    <Binding> [0]
+[Analyze Edges] RGoroutine 0 |At State &{{0 0} [0xc00012c540 0xc00012c5d0] [] [0xc0000b62a0] 2}
+    <Edge> 0 | To {0 1} | Op 0 |On Chan 0
+[Analyze Edges] RGoroutine 1 |At State &{{1 0} [] [] [0xc0000b6300] 2}
+    <Edge> 0 | To {1 1} | Op 1 |On Chan -1
+[Analyze Edges] RGoroutine 2 |At State &{{1 0} [] [] [0xc0000b6300] 2}
+    <Edge> 0 | To {1 1} | Op 1 |On Chan -1
+[singleSends] map[0:[{1 0 0 {0 1} 0 {0 0} 6 0 [] []}]] [singleRecvs] map[0:[{1 0 1 {0 0} 1 {1 1} 7 0 [] []} {1 0 2 {0 0} 2 {1 1} 7 0 [] []}]]
+[available actions]:
+<action> 0 {0 0 0 {0 1} 1 {1 1} 4 0 [] []}
+<action> 1 {0 0 0 {0 1} 2 {1 1} 4 0 [] []}
+[Do Action] ActionType 4 | On Goroutine 0 | ToState {0 1} |ChanID 0 |Chan now 0
+[Analyze Edges] RGoroutine 0 |At State &{{0 1} [] [0xc0000b62a0] [0xc0000b62d0] 2}
+    <Edge> 0 | To {0 2} | Op 0 |On Chan 0
+[Analyze Edges] RGoroutine 2 |At State &{{1 0} [] [] [0xc0000b6300] 2}
+    <Edge> 0 | To {1 1} | Op 1 |On Chan -1
+[singleSends] map[0:[{2 0 0 {0 2} 0 {0 0} 6 0 [] []}]] [singleRecvs] map[0:[{2 0 2 {0 0} 2 {1 1} 7 0 [] []}]]
+[available actions]:
+<action> 0 {0 0 0 {0 2} 2 {1 1} 4 0 [] []}
+[Do Action] ActionType 4 | On Goroutine 0 | ToState {0 2} |ChanID 0 |Chan now 0
+[Execute SUCC]
+[Undo Action] ActionType 4 | On Goroutine 0 | ToState {0 2} |ChanID 0 |Chan now 0
+[Undo Action] ActionType 4 | On Goroutine 0 | ToState {0 1} |ChanID 0 |Chan now 0
+[Do Action] ActionType 4 | On Goroutine 0 | ToState {0 1} |ChanID 0 |Chan now 0
+[Analyze Edges] RGoroutine 0 |At State &{{0 1} [] [0xc0000b62a0] [0xc0000b62d0] 2}
+    <Edge> 0 | To {0 2} | Op 0 |On Chan 0
+[Analyze Edges] RGoroutine 1 |At State &{{1 0} [] [] [0xc0000b6300] 2}
+    <Edge> 0 | To {1 1} | Op 1 |On Chan -1
+[singleSends] map[0:[{2 0 0 {0 2} 0 {0 0} 6 0 [] []}]] [singleRecvs] map[0:[{2 0 1 {0 0} 1 {1 1} 7 0 [] []}]]
+[available actions]:
+<action> 0 {0 0 0 {0 2} 1 {1 1} 4 0 [] []}
+[Do Action] ActionType 4 | On Goroutine 0 | ToState {0 2} |ChanID 0 |Chan now 0
+[Execute SUCC]
+[Undo Action] ActionType 4 | On Goroutine 0 | ToState {0 2} |ChanID 0 |Chan now 0
+[Undo Action] ActionType 4 | On Goroutine 0 | ToState {0 1} |ChanID 0 |Chan now 0
+*****End Execution*****
+
+---REPORT---
+Detected 0 BUGs in [ testcase/test_zero/case3.go ].
+Generate 5 STATEs in total.
+Execute 2 PATHs in total
+-----------

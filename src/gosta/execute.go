@@ -65,6 +65,7 @@ type Action struct {
 	Type ActionType  // 哪种动作
 	ChanID int        // SEND/RECV时，用于改变Chan
 	Goroutines []*Goroutine  // GO时，用于绑定Goroutine初值
+	Goroutines2 []*Goroutine  // 对于ACTION_MATCH, RECV的GO列表
 }
 
 func genAction(e *Edge, step int, onwhich int, sp *StaticProgram, rt *Runtime) Action {
@@ -131,6 +132,38 @@ func genAction(e *Edge, step int, onwhich int, sp *StaticProgram, rt *Runtime) A
 	return a
 }
 
+
+func startGoroutines(rt *Runtime, a *Action, isMatch bool){
+	aGoroutines := a.Goroutines
+	aOnwhich := a.Onwhich
+	if isMatch {
+		aGoroutines = a.Goroutines2
+		aOnwhich = a.Onwhich2
+	}
+	for _, gp := range aGoroutines {
+		// gp.Num 是Goroutine在运行时的下标
+		fmt.Println("    <Go func>", gp.Num)
+		if rt.Goroutines[gp.Num].Machine == NO_MACHINE {  
+			// 以前没有设置过Goroutine，则初始化一下
+			rt.Goroutines[gp.Num].Machine = gp.Machine
+
+			fmt.Println("    <Binding>", gp.Bindings)
+			//rt.Goroutines[gp.Num].Bindings = gp.Bindings  
+			for _, bindChanID := range gp.Bindings {  // 需要对每一个binding进行解析，因为存在协程再调协程的情况
+				realChanID := bindChanID
+				if bindChanID < 0 {
+					realChanID = rt.Goroutines[aOnwhich].Bindings[-bindChanID - 1]
+				}
+				rt.Goroutines[gp.Num].Bindings = append(rt.Goroutines[gp.Num].Bindings, realChanID)
+			}
+			
+		}
+		rt.Goroutines[gp.Num].Current.Push(SID{GID(gp.Machine), 0})  // 对应的GFSM的初始状态(0)
+		rt.Live[gp.Num] = 1 //这个RGoroutine由死亡 -> 活动
+	}
+}
+
+
 func doAction(rt *Runtime, a Action) {  
 	/*
 	上一层： 
@@ -175,24 +208,18 @@ func doAction(rt *Runtime, a Action) {
 
 
 	// -2. 启动若干Goroutine，设置绑定列表
-	for _, gp := range a.Goroutines {
-		// gp.Num 是Goroutine在运行时的下标
-		fmt.Println("    <Go func>", gp.Num)
-		if rt.Goroutines[gp.Num].Machine == NO_MACHINE {  
-			// 以前没有设置过Goroutine，则初始化一下
-			fmt.Println("    <Binding>", gp.Bindings)
-			rt.Goroutines[gp.Num].Bindings = gp.Bindings  // CHECK:这样是值拷贝还是指针拷贝？ 不过无论是哪种，大概都没问题，因为不会修改
-			rt.Goroutines[gp.Num].Machine = gp.Machine
-		}
-		rt.Goroutines[gp.Num].Current.Push(SID{GID(gp.Machine), 0})  // 对应的GFSM的初始状态(0)
-		rt.Live[gp.Num] = 1 //这个RGoroutine由死亡 -> 活动
+	startGoroutines(rt, &a, false)
+	if a.Type == ACTION_MATCH {
+		startGoroutines(rt, &a, true)
 	}
-
-
+	
 	// -1. 追加日志
 	rt.Logs.Push(a)
 	return
 }
+
+
+
 
 func undoAction(rt *Runtime) {
 	la := rt.Logs.Top()
@@ -419,12 +446,16 @@ func Execute(rt *Runtime, sp *StaticProgram, limit int) {
 					matchAction.ToState2 = recvAction.ToState2
 					matchAction.Type = ACTION_MATCH
 					matchAction.ChanID = keyChanID
+					/*
 					for _, goro := range sendAction.Goroutines {
 						matchAction.Goroutines = append(matchAction.Goroutines, goro)
 					}
 					for _, goro := range recvAction.Goroutines {
 						matchAction.Goroutines = append(matchAction.Goroutines, goro)
 					}
+					*/
+					matchAction.Goroutines = sendAction.Goroutines
+					matchAction.Goroutines2 = recvAction.Goroutines
 					availables = append(availables, matchAction)
 				}
 			}

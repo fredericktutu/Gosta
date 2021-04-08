@@ -1,10 +1,10 @@
 package main
 
 /*
-case2:
-因为send产生死锁
+[case2]
+因为send而产生死锁，有两种可能
 
-expect: 1 Bugs
+[expect] 2 Bugs
 */
 
 

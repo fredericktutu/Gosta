@@ -1,9 +1,11 @@
 package main
 
 /*
-case1:
-正常存取
-expect: 0 Bugs
+[case1]
+两个goroutine之间的匹配
+但是因为main直接结束了，其实检测不到
+
+[expect] 0 Bugs
 */
 
 func send(ch chan int) {

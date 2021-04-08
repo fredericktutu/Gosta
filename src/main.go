@@ -3,6 +3,7 @@ import (
 	"gosta"
 	"os"
 	"fmt"
+	"strconv"
 )
 
 
@@ -11,7 +12,7 @@ func main() {
 	sp := gosta.BuildFSMs(os.Args[1])
 	fmt.Println("Static Program after build:\n", sp)
 	if len(os.Args) > 2  {
-		if os.Args[2] == "--noexec" {
+		if os.Args[3] == "--noexec" {
 			return
 		} else {
 			
@@ -21,7 +22,9 @@ func main() {
 	}
 
 	fmt.Println("\n*****Begin Execution*****")
-	var N int = 1000
+	intval64, _ :=  strconv.ParseInt(os.Args[2], 10, 0)
+	N := int(intval64)
+	
 	rt := gosta.MakeRuntime(sp, N)
 	gosta.Execute(rt, sp, N)
 	fmt.Println("*****End Execution*****")
