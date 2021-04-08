@@ -1,5 +1,5 @@
 # Gosta
-detecting Goroutine bugs with Static analysis methodologies
+detecting <strong>Go</strong>routine bugs with <strong>sta</strong>tic analysis methodologies
 
 ## Current Features
 + Detecting goroutine-deadlock by abstract execution on GFSM(Goroutine Finite State Machine)
