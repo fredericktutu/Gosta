@@ -9,7 +9,8 @@ type StaticProgram struct {  //程序的静态特征
 	GFSMs []*GFSM             //所有协程自动机
 	Channels []Channel       //所有管道，一次运行中，只有一套管道
 
-	GoroutineCount int
+	GoroutineCount int  // 运行时可能的总协程数
+	AllStateCount int   // 静态程序的总状态数
 }
 
 type Runtime struct {
@@ -21,7 +22,8 @@ type Runtime struct {
 
 	LogCounter int    //当前日志编号
 
-	Result int // 0 succ  1 fail 3 may
+	Result int // 抽象执行过程中，产生协程死锁的数量
+	Paths int  // 抽象执行过程中，实际分析的路径数
 }
 
 
@@ -270,6 +272,7 @@ func MakeRuntime(sp *StaticProgram, totalScore int) *Runtime{
 	rt := new(Runtime)
 
 	rt.Result = 0
+	rt.Paths = 0
 
 	// 1. 初始化Channels
 	for _, c := range(sp.Channels) {
@@ -349,6 +352,8 @@ func Execute(rt *Runtime, sp *StaticProgram, limit int) {
 	// 检查退出条件
 	mainRoutine := rt.Goroutines[0]
 	if isDead(&mainRoutine, sp) {  // 已经在终止状态了
+		fmt.Println("[Execute SUCC]")
+		rt.Paths += 1
 		return
 	}
 
@@ -438,6 +443,7 @@ func Execute(rt *Runtime, sp *StaticProgram, limit int) {
 	// available空，协程死锁
 	if len(availables) == 0 {
 		fmt.Println("[ERROR] goroutine deadlock!")
+		rt.Paths += 1
 		rt.Result += 1
 		return
 	}

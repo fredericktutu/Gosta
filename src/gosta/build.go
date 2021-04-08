@@ -33,8 +33,10 @@ type BuildHelper struct {
 
 	//构建过程中暂时使用
 	CurFuncname string
-	StateCounter int
+	StateCounter int    // 自动机的状态计数器，每个自动机从0开始
 	CurMachine int
+
+	GlobalStateCounter int  // 全局的状态计数器，用于实验统计
 }
 
 
@@ -141,6 +143,7 @@ func walkFunc(f *ssa.Function, bhelper *BuildHelper) {
 
 func walkBB(bb *ssa.BasicBlock, bhelper *BuildHelper) *SmallFSM {
 	bhelper.StateCounter += 1
+	bhelper.GlobalStateCounter += 1
 	var sfsm *SmallFSM = MakeSmallFSM(bhelper.GFSMs[bhelper.CurMachine], bhelper.CurMachine, bhelper.StateCounter)
 
 	for i, instr := range bb.Instrs {
@@ -155,6 +158,7 @@ func walkBB(bb *ssa.BasicBlock, bhelper *BuildHelper) *SmallFSM {
 			fmt.Println("    <instr>", i, "SEND | To Reg:", instrSend.Chan.Name(), "| Actually is Chan", chanID)
 			
 			bhelper.StateCounter += 1
+			bhelper.GlobalStateCounter += 1
 			AddState(sfsm, bhelper.GFSMs[bhelper.CurMachine], OP_SEND, chanID, bhelper.CurMachine, bhelper.StateCounter)  //增加状态
 
 		case *ssa.UnOp:
@@ -169,6 +173,7 @@ func walkBB(bb *ssa.BasicBlock, bhelper *BuildHelper) *SmallFSM {
 				fmt.Println("    <instr>", i, "RECV | From Reg:", instrUnOp.X.Name(), "| Actually is Chan", chanID)  // Name()返回存channel的寄存器，接下来需要确认是哪个channel
 
 				bhelper.StateCounter += 1
+				bhelper.GlobalStateCounter += 1
 				AddState(sfsm, bhelper.GFSMs[bhelper.CurMachine], OP_RECV, chanID, bhelper.CurMachine, bhelper.StateCounter)  // 增加状态
 
 			}
@@ -315,6 +320,7 @@ func BuildFSMs(fileName string) *StaticProgram{
 	sp.Channels = bhelper.Channels
 	sp.GFSMs = bhelper.GFSMs
 	sp.GoroutineCount = bhelper.GoroutineCounter
+	sp.AllStateCount = bhelper.GlobalStateCounter
 
 	return sp
 
