@@ -1,7 +1,7 @@
 result_zero=(0 1 0 2)
 result_cap=(0 5 120 2)
 result_controlflow=(82 82 18 2)
-result_pipeline=()
+result_pipeline=(137 120 0)
 
 
 testSuite(){
