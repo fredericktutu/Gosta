@@ -19,7 +19,7 @@ testSuite(){
 	    ((n=$n+1))
 	    filepath="${fileprefix}${n}.go"
 		exepath="case${n}.exe"
-	    logpath="${logprefix}${n}.txt"
+	    logpath="${logprefix}${n}.log"
 	    # echo "filepath: $filepath , logpath $logpath"
 		go build ${filepath}
 		if [ "$?" != "0" ]; then 
