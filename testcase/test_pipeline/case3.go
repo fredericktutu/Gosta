@@ -4,7 +4,7 @@ package main
 [case3]
 哲学家进餐问题,奇数先左后右，偶数相反
 
-[expect] 120
+[expect] 0
 */
 
 func odd(left chan int, right chan int, lock chan int) {
