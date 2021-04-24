@@ -1,0 +1,5 @@
+---run testsuite 'test_pipeline'---
+case1: pass! expect 137, find 137
+case2: pass! expect 120, find 120
+case3: pass! expect 0, find 0
+---conclusion: 3 passes, 0 fails, 0 can't compile---

@@ -4,7 +4,7 @@ package main
 [case2]
 因为send而产生死锁，有两种可能
 
-[expect] 2 Bugs
+[expect] 1 Bugs
 */
 
 

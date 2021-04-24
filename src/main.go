@@ -8,18 +8,21 @@ import (
 
 
 func main() {
+	
+	if len(os.Args) != 4 {
+		fmt.Println("Input format:\n[1] File Name(string) [2] Weight(int) [3] '--noexec' or '--exec'")
+		return
+	}
 	//Args[1]为文件名
 	sp := gosta.BuildFSMs(os.Args[1])
 	fmt.Println("Static Program after build:\n", sp)
-	if len(os.Args) > 2  {
-		if os.Args[3] == "--noexec" {
-			return
-		} else {
-			
-		}
+	
+	if os.Args[3] == "--noexec" {
+		return
 	} else {
-		fmt.Println("add --noexec or --exec")
+		
 	}
+	
 
 	fmt.Println("\n*****Begin Execution*****")
 	intval64, _ :=  strconv.ParseInt(os.Args[2], 10, 0)

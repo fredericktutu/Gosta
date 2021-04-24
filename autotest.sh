@@ -13,6 +13,7 @@ testSuite(){
     echo "---run testsuite '$2'---"
     pass=0
     fail=0
+	compile=0
     n=0
 	
     for expect in ${result_array[*]}; do
@@ -24,6 +25,7 @@ testSuite(){
 		go build ${filepath}
 		if [ "$?" != "0" ]; then 
 			echo "case${n}: can't compile!"
+			((compile=$compile+1))
 			continue
 		fi
 		rm -rf ${exepath}
@@ -31,14 +33,14 @@ testSuite(){
 	    bin/main.exe ${filepath} ${weight}  --exec > ${logpath}
 	    result=$?
 	    if [ "$expect" == "$result" ]; then
-		    echo "case${n}: pass!"
+		    echo "case${n}: pass! expect ${expect}, find ${result}"
 		    ((pass=$pass+1))
             else
 		    echo "case${n}: fail! expect ${expect}, find ${result}"
 		    ((fail=$fail+1))
         fi
     done
-    echo "---conclusion: ${pass} passes, ${fail} fails---"
+    echo "---conclusion: ${pass} passes, ${fail} fails, ${compile} can't compile---"
 }
 
 

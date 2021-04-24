@@ -1,0 +1,6 @@
+---run testsuite 'test_cap'---
+case1: pass! expect 0, find 0
+case2: pass! expect 5, find 5
+case3: pass! expect 120, find 120
+case4: pass! expect 2, find 2
+---conclusion: 4 passes, 0 fails, 0 can't compile---

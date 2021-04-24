@@ -1,0 +1,6 @@
+---run testsuite 'test_controlflow'---
+case1: pass! expect 82, find 82
+case2: pass! expect 82, find 82
+case3: pass! expect 18, find 18
+case4: pass! expect 2, find 2
+---conclusion: 4 passes, 0 fails, 0 can't compile---
